@@ -1,0 +1,295 @@
+{
+	"info": {
+		"_postman_id": "mcp-test-server-collection",
+		"name": "MCP Test Server API",
+		"description": "API collection for MCP Test Server - Model Context Protocol Server for Testing Support",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/mcp/health",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "mcp", "health"]
+				},
+				"description": "Check if MCP Test Server is running"
+			},
+			"response": []
+		},
+		{
+			"name": "Server Info",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/mcp/info",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "mcp", "info"]
+				},
+				"description": "Get server information and supported operations"
+			},
+			"response": []
+		},
+		{
+			"name": "Document Analysis",
+			"item": [
+				{
+					"name": "Analyze SRS Document",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"document\": {\n    \"title\": \"E-commerce Login System SRS\",\n    \"content\": \"FR-001: User shall be able to login with valid email and password.\\nFR-002: System shall display error message for invalid credentials.\\nFR-003: User shall be able to reset password using email.\\n\\nAcceptance Criteria:\\n1. User enters valid email and password\\n2. System authenticates credentials\\n3. User is redirected to dashboard\\n4. Session is established\",\n    \"type\": \"SRS\",\n    \"description\": \"Login system requirements for e-commerce platform\"\n  },\n  \"analysisType\": \"requirements\",\n  \"includeRequirements\": true,\n  \"includeTestCases\": false,\n  \"outputFormat\": \"json\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/mcp/documents/analyze",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mcp", "documents", "analyze"]
+						},
+						"description": "Analyze SRS document and extract requirements"
+					},
+					"response": []
+				},
+				{
+					"name": "Analyze PRD Document",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"document\": {\n    \"title\": \"Mobile App PRD\",\n    \"content\": \"As a registered user, I want to receive push notifications for order updates so that I can stay informed about my purchases.\\n\\nAs a guest user, I want to browse products without creating an account so that I can evaluate the platform before committing.\",\n    \"type\": \"PRD\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/mcp/documents/analyze",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mcp", "documents", "analyze"]
+						},
+						"description": "Analyze PRD document and extract user stories"
+					},
+					"response": []
+				},
+				{
+					"name": "Analyze Figma Design",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"document\": {\n    \"title\": \"Login Page Design\",\n    \"content\": \"UI-001: Login form should be centered on page\\nUI-002: Email field should have proper validation\\nUI-003: Password field should show/hide toggle\\n\\nUX-001: Form should be responsive on mobile devices\\nUX-002: Error messages should be clear and actionable\",\n    \"type\": \"FIGMA\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/mcp/documents/analyze",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mcp", "documents", "analyze"]
+						},
+						"description": "Analyze Figma design and extract UI/UX requirements"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Test Case Generation",
+			"item": [
+				{
+					"name": "Generate Functional Test Cases",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"requirementId\": \"FR-001\",\n  \"requirement\": {\n    \"id\": 1,\n    \"requirementId\": \"FR-001\",\n    \"title\": \"User shall be able to login with valid email and password\",\n    \"description\": \"User shall be able to login with valid email and password\",\n    \"type\": \"FUNCTIONAL\",\n    \"priority\": \"MUST_HAVE\",\n    \"acceptanceCriteria\": \"1. User enters valid email and password\\n2. System authenticates credentials\\n3. User is redirected to dashboard\\n4. Session is established\"\n  },\n  \"testCaseType\": \"FUNCTIONAL\",\n  \"priority\": \"HIGH\",\n  \"includeNegativeTests\": true,\n  \"includeBoundaryTests\": true,\n  \"outputFormat\": \"json\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/mcp/testcases/generate",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mcp", "testcases", "generate"]
+						},
+						"description": "Generate functional test cases from requirement"
+					},
+					"response": []
+				},
+				{
+					"name": "Generate UI Test Cases",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"requirementId\": \"UI-001\",\n  \"requirement\": {\n    \"id\": 3,\n    \"requirementId\": \"UI-001\",\n    \"title\": \"Login form shall be responsive on mobile devices\",\n    \"description\": \"Login form should adapt to different screen sizes\",\n    \"type\": \"USER_INTERFACE\"\n  },\n  \"testCaseType\": \"UI\",\n  \"priority\": \"HIGH\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/mcp/testcases/generate",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mcp", "testcases", "generate"]
+						},
+						"description": "Generate UI test cases from requirement"
+					},
+					"response": []
+				},
+				{
+					"name": "Generate API Test Cases",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"requirementId\": \"API-001\",\n  \"requirement\": {\n    \"id\": 4,\n    \"requirementId\": \"API-001\",\n    \"title\": \"User authentication API\",\n    \"description\": \"API should authenticate users and return JWT token\",\n    \"type\": \"TECHNICAL\"\n  },\n  \"testCaseType\": \"API\",\n  \"priority\": \"HIGH\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/mcp/testcases/generate",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mcp", "testcases", "generate"]
+						},
+						"description": "Generate API test cases from requirement"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Robot Framework Generation",
+			"item": [
+				{
+					"name": "Generate Basic Robot Framework Script",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"testCaseId\": \"TC-FR-001-001\",\n  \"testCase\": {\n    \"testCaseId\": \"TC-FR-001-001\",\n    \"title\": \"Positive Test: User Login\",\n    \"description\": \"Verify user can login with valid credentials\",\n    \"preconditions\": \"User is logged in with valid credentials\",\n    \"testSteps\": \"1. Navigate to login page\\n2. Enter valid email in email field\\n3. Enter valid password in password field\\n4. Click login button\\n5. Verify dashboard is displayed\",\n    \"expectedResult\": \"User successfully logged in and redirected to dashboard\",\n    \"testType\": \"FUNCTIONAL\",\n    \"priority\": \"HIGH\",\n    \"module\": \"Authentication\"\n  },\n  \"options\": {\n    \"baseUrl\": \"https://demo.example.com\",\n    \"browser\": \"chrome\",\n    \"timeout\": \"10s\",\n    \"seleniumSpeed\": \"0.5 seconds\",\n    \"username\": \"testuser@example.com\",\n    \"password\": \"testpass123\",\n    \"includeDataDriver\": false,\n    \"includeScreenshots\": true,\n    \"testEnvironment\": \"staging\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/mcp/automation/robot-framework",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mcp", "automation", "robot-framework"]
+						},
+						"description": "Generate Robot Framework script from test case"
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Data-Driven Robot Framework Script",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"testCaseId\": \"TC-FR-001-002\",\n  \"testCase\": {\n    \"testCaseId\": \"TC-FR-001-002\",\n    \"title\": \"Data-Driven Login Test\",\n    \"description\": \"Test login with multiple user credentials\",\n    \"testSteps\": \"1. Navigate to login page\\n2. Enter username\\n3. Enter password\\n4. Click login\\n5. Verify result\",\n    \"expectedResult\": \"Login result matches expectation\"\n  },\n  \"options\": {\n    \"baseUrl\": \"https://demo.example.com\",\n    \"browser\": \"chrome\",\n    \"includeDataDriver\": true,\n    \"testEnvironment\": \"test\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/mcp/automation/robot-framework",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mcp", "automation", "robot-framework"]
+						},
+						"description": "Generate data-driven Robot Framework script"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Error Handling Examples",
+			"item": [
+				{
+					"name": "Invalid Document Type",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"document\": {\n    \"title\": \"Invalid Document\",\n    \"content\": \"Some content\",\n    \"type\": \"INVALID_TYPE\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/mcp/documents/analyze",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mcp", "documents", "analyze"]
+						},
+						"description": "Test error handling with invalid document type"
+					},
+					"response": []
+				},
+				{
+					"name": "Missing Required Fields",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"requirementId\": \"REQ-001\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/mcp/testcases/generate",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mcp", "testcases", "generate"]
+						},
+						"description": "Test error handling with missing required fields"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080/mcp-test-server",
+			"type": "string"
+		}
+	]
+}

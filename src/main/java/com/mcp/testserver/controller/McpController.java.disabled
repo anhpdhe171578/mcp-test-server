@@ -1,0 +1,118 @@
+package com.mcp.testserver.controller;
+
+import com.mcp.testserver.dto.*;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import jakarta.validation.Valid;
+import java.util.Map;
+import java.util.HashMap;
+
+@RestController
+@RequestMapping("/api/mcp")
+@RequiredArgsConstructor
+@Slf4j
+@CrossOrigin(origins = "*")
+public class McpController {
+    
+    // Temporarily comment out services due to Lombok issues
+    // private final DocumentAnalysisService documentAnalysisService;
+    // private final TestCaseGenerationService testCaseGenerationService;
+    // private final RobotFrameworkService robotFrameworkService;
+    
+    @PostMapping("/documents/analyze")
+    public ResponseEntity<DocumentAnalysisResponse> analyzeDocument(
+            @Valid @RequestBody DocumentAnalysisRequest request) {
+        log.info("Received document analysis request");
+        
+        try {
+            // Temporary mock response
+            DocumentAnalysisResponse response = DocumentAnalysisResponse.builder()
+                    .documentId(1L)
+                    .analysisSummary("Document analysis temporarily disabled due to Lombok configuration issues")
+                    .status("MOCK")
+                    .message("This is a mock response - services will be re-enabled once Lombok issues are resolved")
+                    .build();
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error analyzing document", e);
+            DocumentAnalysisResponse errorResponse = DocumentAnalysisResponse.builder()
+                    .status("ERROR")
+                    .message("Failed to analyze document: " + e.getMessage())
+                    .build();
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+    
+    @PostMapping("/testcases/generate")
+    public ResponseEntity<TestCaseGenerationResponse> generateTestCases(
+            @Valid @RequestBody TestCaseGenerationRequest request) {
+        log.info("Received test case generation request for requirement: {}", request.getRequirementId());
+        
+        try {
+            // Temporary mock response
+            TestCaseGenerationResponse response = TestCaseGenerationResponse.builder()
+                    .requirementId(request.getRequirementId())
+                    .generationSummary("Test case generation temporarily disabled due to Lombok configuration issues")
+                    .status("MOCK")
+                    .message("This is a mock response - services will be re-enabled once Lombok issues are resolved")
+                    .build();
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error generating test cases", e);
+            TestCaseGenerationResponse errorResponse = TestCaseGenerationResponse.builder()
+                    .requirementId(request.getRequirementId())
+                    .status("ERROR")
+                    .message("Failed to generate test cases: " + e.getMessage())
+                    .build();
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+    
+    @PostMapping("/automation/robot-framework")
+    public ResponseEntity<RobotFrameworkResponse> generateRobotFrameworkScript(
+            @Valid @RequestBody RobotFrameworkRequest request) {
+        log.info("Received Robot Framework script generation request for test case: {}", request.getTestCaseId());
+        
+        try {
+            // Temporary mock response
+            RobotFrameworkResponse response = RobotFrameworkResponse.builder()
+                    .testCaseId(request.getTestCaseId())
+                    .scriptName("mock-script.robot")
+                    .scriptContent("*** Settings ***\nDocumentation Mock Robot Framework script\nLibrary SeleniumLibrary\n\n*** Test Cases ***\nMock Test Case\n    Log This is a mock script")
+                    .generationSummary("Robot Framework script generation temporarily disabled due to Lombok configuration issues")
+                    .status("MOCK")
+                    .message("This is a mock response - services will be re-enabled once Lombok issues are resolved")
+                    .build();
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error generating Robot Framework script", e);
+            RobotFrameworkResponse errorResponse = RobotFrameworkResponse.builder()
+                    .testCaseId(request.getTestCaseId())
+                    .status("ERROR")
+                    .message("Failed to generate Robot Framework script: " + e.getMessage())
+                    .build();
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+    
+    @GetMapping("/health")
+    public ResponseEntity<String> healthCheck() {
+        return ResponseEntity.ok("MCP Test Server is running");
+    }
+    
+    @GetMapping("/info")
+    public ResponseEntity<String> getInfo() {
+        return ResponseEntity.ok("""
+            MCP Test Server v1.0.0
+            Supported Operations:
+            - Document Analysis (SRS, PRD, Figma, User Stories) - TEMPORARILY DISABLED
+            - Test Case Generation (Manual & Automated) - TEMPORARILY DISABLED
+            - Robot Framework Script Generation - TEMPORARILY DISABLED
+            - Integration with Test Management Systems
+            Status: Core services running, advanced services temporarily disabled due to Lombok configuration issues
+            """);
+    }
+}

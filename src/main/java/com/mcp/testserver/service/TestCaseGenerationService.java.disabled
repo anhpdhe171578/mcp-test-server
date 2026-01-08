@@ -1,0 +1,384 @@
+package com.mcp.testserver.service;
+
+import com.mcp.testserver.model.*;
+import com.mcp.testserver.dto.TestCaseGenerationRequest;
+import com.mcp.testserver.dto.TestCaseGenerationResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class TestCaseGenerationService {
+    
+    private final DocumentAnalysisService documentAnalysisService;
+    
+    public TestCaseGenerationResponse generateTestCases(TestCaseGenerationRequest request) {
+        log.info("Generating test cases for requirement: {}", request.getRequirementId());
+        
+        List<TestCase> testCases = new ArrayList<>();
+        
+        // Get requirement details
+        Requirement requirement = request.getRequirement();
+        if (requirement == null) {
+            log.error("Requirement not found for ID: {}", request.getRequirementId());
+            return TestCaseGenerationResponse.builder()
+                    .requirementId(request.getRequirementId())
+                    .testCases(testCases)
+                    .generationSummary("Requirement not found")
+                    .build();
+        }
+        
+        // Generate test cases based on requirement type
+        switch (requirement.getType()) {
+            case FUNCTIONAL:
+                testCases = generateFunctionalTestCases(requirement);
+                break;
+            case NON_FUNCTIONAL:
+                testCases = generateNonFunctionalTestCases(requirement);
+                break;
+            case BUSINESS:
+                testCases = generateBusinessTestCases(requirement);
+                break;
+            case USER_INTERFACE:
+                testCases = generateUITestCases(requirement);
+                break;
+            case SECURITY:
+                testCases = generateSecurityTestCases(requirement);
+                break;
+            case PERFORMANCE:
+                testCases = generatePerformanceTestCases(requirement);
+                break;
+            default:
+                testCases = generateGenericTestCases(requirement);
+        }
+        
+        return TestCaseGenerationResponse.builder()
+                .requirementId(requirement.getRequirementId())
+                .testCases(testCases)
+                .generationSummary(String.format("Generated %d test cases for requirement %s", 
+                        testCases.size(), requirement.getRequirementId()))
+                .build();
+    }
+    
+    private List<TestCase> generateFunctionalTestCases(Requirement requirement) {
+        List<TestCase> testCases = new ArrayList<>();
+        
+        // Positive test case
+        TestCase positiveCase = TestCase.builder()
+                .testCaseId("TC-" + requirement.getRequirementId() + "-001")
+                .title("Positive Test: " + requirement.getTitle())
+                .description("Verify that the system behaves correctly when valid inputs are provided")
+                .preconditions(extractPreconditions(requirement))
+                .testSteps(generatePositiveTestSteps(requirement))
+                .expectedResult(extractExpectedResult(requirement))
+                .testType(TestCase.TestType.FUNCTIONAL)
+                .priority(TestCase.Priority.HIGH)
+                .status(TestCase.Status.DRAFT)
+                .module(extractModule(requirement))
+                .feature(extractFeature(requirement))
+                .build();
+        
+        testCases.add(positiveCase);
+        
+        // Negative test case
+        TestCase negativeCase = TestCase.builder()
+                .testCaseId("TC-" + requirement.getRequirementId() + "-002")
+                .title("Negative Test: " + requirement.getTitle())
+                .description("Verify that the system handles invalid inputs appropriately")
+                .preconditions(extractPreconditions(requirement))
+                .testSteps(generateNegativeTestSteps(requirement))
+                .expectedResult("System should display appropriate error message and not process invalid data")
+                .testType(TestCase.TestType.FUNCTIONAL)
+                .priority(TestCase.Priority.MEDIUM)
+                .status(TestCase.Status.DRAFT)
+                .module(extractModule(requirement))
+                .feature(extractFeature(requirement))
+                .build();
+        
+        testCases.add(negativeCase);
+        
+        // Boundary test case
+        TestCase boundaryCase = TestCase.builder()
+                .testCaseId("TC-" + requirement.getRequirementId() + "-003")
+                .title("Boundary Test: " + requirement.getTitle())
+                .description("Verify system behavior at boundary values")
+                .preconditions(extractPreconditions(requirement))
+                .testSteps(generateBoundaryTestSteps(requirement))
+                .expectedResult("System should handle boundary values correctly")
+                .testType(TestCase.TestType.FUNCTIONAL)
+                .priority(TestCase.Priority.MEDIUM)
+                .status(TestCase.Status.DRAFT)
+                .module(extractModule(requirement))
+                .feature(extractFeature(requirement))
+                .build();
+        
+        testCases.add(boundaryCase);
+        
+        return testCases;
+    }
+    
+    private List<TestCase> generateUITestCases(Requirement requirement) {
+        List<TestCase> testCases = new ArrayList<>();
+        
+        TestCase uiTestCase = TestCase.builder()
+                .testCaseId("TC-" + requirement.getRequirementId() + "-UI-001")
+                .title("UI Test: " + requirement.getTitle())
+                .description("Verify user interface elements and interactions")
+                .preconditions("User is logged in and has appropriate permissions")
+                .testSteps(generateUITestSteps(requirement))
+                .expectedResult("UI elements are displayed correctly and respond to user interactions")
+                .testType(TestCase.TestType.UI)
+                .priority(TestCase.Priority.HIGH)
+                .status(TestCase.Status.DRAFT)
+                .module("UI")
+                .feature(extractFeature(requirement))
+                .build();
+        
+        testCases.add(uiTestCase);
+        
+        return testCases;
+    }
+    
+    private List<TestCase> generateBusinessTestCases(Requirement requirement) {
+        List<TestCase> testCases = new ArrayList<>();
+        
+        // Extract user story components
+        String description = requirement.getDescription();
+        String role = extractRoleFromUserStory(description);
+        String action = extractActionFromUserStory(description);
+        String value = extractValueFromUserStory(description);
+        
+        TestCase businessTestCase = TestCase.builder()
+                .testCaseId("TC-" + requirement.getRequirementId() + "-BUS-001")
+                .title("Business Test: " + requirement.getTitle())
+                .description(String.format("Verify that %s can %s to achieve %s", role, action, value))
+                .preconditions(String.format("User is logged in as %s", role))
+                .testSteps(generateBusinessTestSteps(role, action))
+                .expectedResult(String.format("User successfully %s and achieves %s", action, value))
+                .testType(TestCase.TestType.FUNCTIONAL)
+                .priority(TestCase.Priority.HIGH)
+                .status(TestCase.Status.DRAFT)
+                .module(extractModule(requirement))
+                .feature(extractFeature(requirement))
+                .build();
+        
+        testCases.add(businessTestCase);
+        
+        return testCases;
+    }
+    
+    private List<TestCase> generateNonFunctionalTestCases(Requirement requirement) {
+        List<TestCase> testCases = new ArrayList<>();
+        
+        TestCase nfrTestCase = TestCase.builder()
+                .testCaseId("TC-" + requirement.getRequirementId() + "-NFR-001")
+                .title("Non-Functional Test: " + requirement.getTitle())
+                .description("Verify non-functional requirements")
+                .preconditions("System is running under normal load conditions")
+                .testSteps(generateNonFunctionalTestSteps(requirement))
+                .expectedResult("System meets non-functional requirements")
+                .testType(TestCase.TestType.PERFORMANCE)
+                .priority(TestCase.Priority.MEDIUM)
+                .status(TestCase.Status.DRAFT)
+                .module("Performance")
+                .feature(extractFeature(requirement))
+                .build();
+        
+        testCases.add(nfrTestCase);
+        
+        return testCases;
+    }
+    
+    private List<TestCase> generateSecurityTestCases(Requirement requirement) {
+        List<TestCase> testCases = new ArrayList<>();
+        
+        TestCase securityTestCase = TestCase.builder()
+                .testCaseId("TC-" + requirement.getRequirementId() + "-SEC-001")
+                .title("Security Test: " + requirement.getTitle())
+                .description("Verify security requirements")
+                .preconditions("System is configured with security settings")
+                .testSteps(generateSecurityTestSteps(requirement))
+                .expectedResult("System maintains security and prevents unauthorized access")
+                .testType(TestCase.TestType.SECURITY)
+                .priority(TestCase.Priority.HIGH)
+                .status(TestCase.Status.DRAFT)
+                .module("Security")
+                .feature(extractFeature(requirement))
+                .build();
+        
+        testCases.add(securityTestCase);
+        
+        return testCases;
+    }
+    
+    private List<TestCase> generatePerformanceTestCases(Requirement requirement) {
+        List<TestCase> testCases = new ArrayList<>();
+        
+        TestCase performanceTestCase = TestCase.builder()
+                .testCaseId("TC-" + requirement.getRequirementId() + "-PERF-001")
+                .title("Performance Test: " + requirement.getTitle())
+                .description("Verify performance requirements")
+                .preconditions("System is under load testing conditions")
+                .testSteps(generatePerformanceTestSteps(requirement))
+                .expectedResult("System meets performance criteria")
+                .testType(TestCase.TestType.PERFORMANCE)
+                .priority(TestCase.Priority.MEDIUM)
+                .status(TestCase.Status.DRAFT)
+                .module("Performance")
+                .feature(extractFeature(requirement))
+                .build();
+        
+        testCases.add(performanceTestCase);
+        
+        return testCases;
+    }
+    
+    private List<TestCase> generateGenericTestCases(Requirement requirement) {
+        List<TestCase> testCases = new ArrayList<>();
+        
+        TestCase genericTestCase = TestCase.builder()
+                .testCaseId("TC-" + requirement.getRequirementId() + "-GEN-001")
+                .title("Generic Test: " + requirement.getTitle())
+                .description("Verify requirement implementation")
+                .preconditions("System is ready for testing")
+                .testSteps("1. Execute the functionality\n2. Verify the result\n3. Document the outcome")
+                .expectedResult("Requirement is implemented correctly")
+                .testType(TestCase.TestType.FUNCTIONAL)
+                .priority(TestCase.Priority.MEDIUM)
+                .status(TestCase.Status.DRAFT)
+                .module(extractModule(requirement))
+                .feature(extractFeature(requirement))
+                .build();
+        
+        testCases.add(genericTestCase);
+        
+        return testCases;
+    }
+    
+    // Helper methods for extracting information
+    private String extractPreconditions(Requirement requirement) {
+        String description = requirement.getDescription().toLowerCase();
+        if (description.contains("login") || description.contains("authentication")) {
+            return "User is logged in with valid credentials";
+        } else if (description.contains("admin") || description.contains("administrator")) {
+            return "User is logged in as administrator";
+        } else {
+            return "System is available and user has appropriate permissions";
+        }
+    }
+    
+    private String generatePositiveTestSteps(Requirement requirement) {
+        return "1. Navigate to the relevant screen/page\n" +
+               "2. Enter valid data in all required fields\n" +
+               "3. Click submit/execute button\n" +
+               "4. Verify the system processes the request successfully\n" +
+               "5. Confirm the expected result is displayed";
+    }
+    
+    private String generateNegativeTestSteps(Requirement requirement) {
+        return "1. Navigate to the relevant screen/page\n" +
+               "2. Enter invalid data in required fields\n" +
+               "3. Click submit/execute button\n" +
+               "4. Verify appropriate error message is displayed\n" +
+               "5. Confirm system does not process invalid data";
+    }
+    
+    private String generateBoundaryTestSteps(Requirement requirement) {
+        return "1. Navigate to the relevant screen/page\n" +
+               "2. Enter boundary values (minimum, maximum, just below/above limits)\n" +
+               "3. Click submit/execute button\n" +
+               "4. Verify system handles boundary values correctly\n" +
+               "5. Confirm no errors or unexpected behavior";
+    }
+    
+    private String generateUITestSteps(Requirement requirement) {
+        return "1. Open the application\n" +
+               "2. Navigate to the relevant screen\n" +
+               "3. Verify all UI elements are displayed correctly\n" +
+               "4. Test user interactions (click, hover, input)\n" +
+               "5. Verify responsive design on different screen sizes\n" +
+               "6. Confirm accessibility features are working";
+    }
+    
+    private String generateBusinessTestSteps(String role, String action) {
+        return "1. Login as " + role + "\n" +
+               "2. Navigate to the relevant feature\n" +
+               "3. Perform the action: " + action + "\n" +
+               "4. Verify the business outcome is achieved\n" +
+               "5. Confirm user experience meets expectations";
+    }
+    
+    private String generateNonFunctionalTestSteps(Requirement requirement) {
+        return "1. Prepare test environment\n" +
+               "2. Execute load/stress testing\n" +
+               "3. Monitor system performance metrics\n" +
+               "4. Verify compliance with non-functional requirements\n" +
+               "5. Document performance results";
+    }
+    
+    private String generateSecurityTestSteps(Requirement requirement) {
+        return "1. Attempt unauthorized access\n" +
+               "2. Test input validation and sanitization\n" +
+               "3. Verify authentication and authorization\n" +
+               "4. Test for common vulnerabilities (XSS, SQL injection, etc.)\n" +
+               "5. Confirm security measures are effective";
+    }
+    
+    private String generatePerformanceTestSteps(Requirement requirement) {
+        return "1. Establish performance baseline\n" +
+               "2. Execute performance tests under various loads\n" +
+               "3. Measure response times and throughput\n" +
+               "4. Monitor resource utilization\n" +
+               "5. Compare results against performance criteria";
+    }
+    
+    private String extractExpectedResult(Requirement requirement) {
+        if (requirement.getAcceptanceCriteria() != null && !requirement.getAcceptanceCriteria().isEmpty()) {
+            return requirement.getAcceptanceCriteria();
+        }
+        return "System processes the request successfully and displays expected result";
+    }
+    
+    private String extractModule(Requirement requirement) {
+        String description = requirement.getDescription().toLowerCase();
+        if (description.contains("login") || description.contains("user")) return "Authentication";
+        if (description.contains("payment") || description.contains("billing")) return "Payment";
+        if (description.contains("report") || description.contains("analytics")) return "Reporting";
+        if (description.contains("admin")) return "Administration";
+        return "General";
+    }
+    
+    private String extractFeature(Requirement requirement) {
+        String title = requirement.getTitle();
+        if (title.length() > 50) {
+            return title.substring(0, 47) + "...";
+        }
+        return title;
+    }
+    
+    private String extractRoleFromUserStory(String description) {
+        Pattern pattern = Pattern.compile("as a\\s+(.+?)\\s+i want", Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(description);
+        return matcher.find() ? matcher.group(1).trim() : "User";
+    }
+    
+    private String extractActionFromUserStory(String description) {
+        Pattern pattern = Pattern.compile("i want\\s+(.+?)\\s+so that", Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(description);
+        return matcher.find() ? matcher.group(1).trim() : "perform action";
+    }
+    
+    private String extractValueFromUserStory(String description) {
+        Pattern pattern = Pattern.compile("so that\\s+(.+)", Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(description);
+        return matcher.find() ? matcher.group(1).trim() : "achieve benefit";
+    }
+}

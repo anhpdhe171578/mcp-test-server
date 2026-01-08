@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Test Server - Error</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .error-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 500px;
+        }
+        .error-code {
+            font-size: 4rem;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 0;
+        }
+        .error-message {
+            font-size: 1.2rem;
+            color: #555;
+            margin: 1rem 0;
+        }
+        .error-type {
+            font-size: 1rem;
+            color: #777;
+            margin-bottom: 2rem;
+        }
+        .api-info {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 5px;
+            margin: 1rem 0;
+            text-align: left;
+        }
+        .api-endpoint {
+            font-family: 'Courier New', monospace;
+            background: #e9ecef;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            margin: 0.2rem 0;
+            display: block;
+        }
+        .btn {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 0.5rem;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background: #5a6fd8;
+        }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="logo">🧪 MCP Test Server</div>
+        <div class="error-code">404</div>
+        <div class="error-message">Page Not Found</div>
+        <div class="error-type" th:text="${'Type: ' + #request.getAttribute('javax.servlet.error.exception_type')}">Type: Not Found</div>
+        
+        <div class="api-info">
+            <h3>Available API Endpoints:</h3>
+            <div class="api-endpoint">GET /api/mcp/health</div>
+            <div class="api-endpoint">GET /api/mcp/info</div>
+            <div class="api-endpoint">POST /api/mcp/documents/analyze</div>
+            <div class="api-endpoint">POST /api/mcp/testcases/generate</div>
+            <div class="api-endpoint">POST /api/mcp/automation/robot-framework</div>
+        </div>
+        
+        <div>
+            <a href="/mcp-test-server/api/mcp/health" class="btn">Health Check</a>
+            <a href="/mcp-test-server/api/mcp/info" class="btn">API Info</a>
+        </div>
+        
+        <p style="margin-top: 2rem; color: #666; font-size: 0.9rem;">
+            MCP Test Server v1.0.0 - Model Context Protocol Server for Testing Support
+        </p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,77 @@
+# Maven
+target/
+!.mvn/
+.mvn/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs
+logs/
+*.log
+
+# Runtime
+*.pid
+*.seed
+*.pid.lock
+
+# Database
+*.db
+*.sqlite
+*.h2.db
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Docker
+.docker/
+docker-compose.override.yml
+docker-compose.prod.yml
+
+# Environment
+.env.local
+.env.development
+.env.test
+.env.prod
+
+# Node.js (if using for frontend tools)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Backup files
+*.backup
+*.old
+
+# Test data
+test_data/
+test-results/
+screenshots/
+
+# Generated documentation
+docs/generated/
+
+# SSL certificates
+*.pem
+*.key
+*.crt
+*.p12
+
+# Robot Framework
+output.xml
+log.html
+report.html

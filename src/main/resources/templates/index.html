@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Test Server</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 600px;
+        }
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+        .subtitle {
+            font-size: 1.2rem;
+            color: #555;
+            margin-bottom: 2rem;
+        }
+        .api-section {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 5px;
+            margin: 1rem 0;
+            text-align: left;
+        }
+        .api-endpoint {
+            font-family: 'Courier New', monospace;
+            background: #e9ecef;
+            padding: 0.5rem;
+            border-radius: 3px;
+            margin: 0.5rem 0;
+            display: block;
+            border-left: 4px solid #667eea;
+        }
+        .method {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            margin-right: 0.5rem;
+        }
+        .method.post {
+            background: #007bff;
+        }
+        .method.get {
+            background: #28a745;
+        }
+        .btn {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 0.5rem;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background: #5a6fd8;
+        }
+        .status {
+            background: #d4edda;
+            color: #155724;
+            padding: 0.5rem;
+            border-radius: 5px;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🧪 MCP Test Server</div>
+        <div class="subtitle">Model Context Protocol Server for Testing Support</div>
+        
+        <div class="status">
+            ✅ Server is running and ready to accept requests
+        </div>
+        
+        <div class="api-section">
+            <h3>Available API Endpoints:</h3>
+            
+            <div class="api-endpoint">
+                <span class="method get">GET</span>
+                <a href="/mcp-test-server/api/mcp/health" style="text-decoration: none; color: inherit;">/api/mcp/health</a>
+                <br><small>Health check endpoint</small>
+            </div>
+            
+            <div class="api-endpoint">
+                <span class="method get">GET</span>
+                <a href="/mcp-test-server/api/mcp/info" style="text-decoration: none; color: inherit;">/api/mcp/info</a>
+                <br><small>Server information and supported operations</small>
+            </div>
+            
+            <div class="api-endpoint">
+                <span class="method post">POST</span>
+                /api/mcp/documents/analyze
+                <br><small>Analyze SRS/PRD/Figma documents</small>
+            </div>
+            
+            <div class="api-endpoint">
+                <span class="method post">POST</span>
+                /api/mcp/testcases/generate
+                <br><small>Generate test cases from requirements</small>
+            </div>
+            
+            <div class="api-endpoint">
+                <span class="method post">POST</span>
+                /api/mcp/automation/robot-framework
+                <br><small>Generate Robot Framework scripts</small>
+            </div>
+        </div>
+        
+        <div>
+            <a href="/mcp-test-server/api/mcp/health" class="btn">Test Health</a>
+            <a href="/mcp-test-server/h2-console" class="btn">H2 Console</a>
+        </div>
+        
+        <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #eee;">
+            <h4>Features:</h4>
+            <ul style="text-align: left; color: #666;">
+                <li>📄 Document Analysis (SRS, PRD, Figma, User Stories)</li>
+                <li>🧪 Test Case Generation (Manual & Automated)</li>
+                <li>🤖 Robot Framework Script Generation</li>
+                <li>🔗 Integration with Test Management Systems</li>
+                <li>📊 RESTful API with comprehensive documentation</li>
+            </ul>
+        </div>
+        
+        <p style="margin-top: 2rem; color: #666; font-size: 0.9rem;">
+            MCP Test Server v1.0.0<br>
+            <a href="https://github.com/your-org/mcp-test-server" style="color: #667eea;">Documentation</a> | 
+            <a href="/mcp-test-server/docs/API-Examples.md" style="color: #667eea;">API Examples</a>
+        </p>
+    </div>
+</body>
+</html>

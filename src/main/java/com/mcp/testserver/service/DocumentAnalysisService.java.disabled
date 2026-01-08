@@ -1,0 +1,245 @@
+package com.mcp.testserver.service;
+
+import com.mcp.testserver.model.Document;
+import com.mcp.testserver.model.Requirement;
+import com.mcp.testserver.dto.DocumentAnalysisRequest;
+import com.mcp.testserver.dto.DocumentAnalysisResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class DocumentAnalysisService {
+    
+    private final WebClient webClient;
+    
+    public DocumentAnalysisResponse analyzeDocument(DocumentAnalysisRequest request) {
+        log.info("Analyzing document of type: {}", request.getDocument().getType());
+        
+        Document document = request.getDocument();
+        List<Requirement> requirements = new ArrayList<>();
+        
+        switch (document.getType()) {
+            case SRS:
+                requirements = analyzeSRS(document);
+                break;
+            case PRD:
+                requirements = analyzePRD(document);
+                break;
+            case FIGMA:
+                requirements = analyzeFigma(document);
+                break;
+            case USER_STORY:
+                requirements = analyzeUserStory(document);
+                break;
+            default:
+                log.warn("Unsupported document type: {}", document.getType());
+        }
+        
+        return DocumentAnalysisResponse.builder()
+                .documentId(document.getId())
+                .requirements(requirements)
+                .analysisSummary(generateAnalysisSummary(requirements))
+                .build();
+    }
+    
+    private List<Requirement> analyzeSRS(Document document) {
+        List<Requirement> requirements = new ArrayList<>();
+        String content = document.getContent();
+        
+        // Extract functional requirements
+        List<Requirement> functionalReqs = extractRequirementsByPattern(
+            content, 
+            "FR[-\\s]*(\\d+)[:\\s]*(.+?)(?=\\n\\s*FR[-\\s]*|\\n\\s*NFR[-\\s]*|$)",
+            Requirement.Type.FUNCTIONAL,
+            "FR"
+        );
+        requirements.addAll(functionalReqs);
+        
+        // Extract non-functional requirements
+        List<Requirement> nonFunctionalReqs = extractRequirementsByPattern(
+            content,
+            "NFR[-\\s]*(\\d+)[:\\s]*(.+?)(?=\\n\\s*FR[-\\s]*|\\n\\s*NFR[-\\s]*|$)",
+            Requirement.Type.NON_FUNCTIONAL,
+            "NFR"
+        );
+        requirements.addAll(nonFunctionalReqs);
+        
+        // Extract acceptance criteria
+        extractAcceptanceCriteria(content, requirements);
+        
+        return requirements;
+    }
+    
+    private List<Requirement> analyzePRD(Document document) {
+        List<Requirement> requirements = new ArrayList<>();
+        String content = document.getContent();
+        
+        // Extract user stories
+        List<Requirement> userStories = extractRequirementsByPattern(
+            content,
+            "As a\\s+(.+?)\\s+I want\\s+(.+?)\\s+so that\\s+(.+?)(?=\\n\\s*As a|\\n\\s*##|$)",
+            Requirement.Type.BUSINESS,
+            "US"
+        );
+        requirements.addAll(userStories);
+        
+        // Extract business requirements
+        List<Requirement> businessReqs = extractRequirementsByPattern(
+            content,
+            "BR[-\\s]*(\\d+)[:\\s]*(.+?)(?=\\n\\s*BR[-\\s]*|\\n\\s*As a|$)",
+            Requirement.Type.BUSINESS,
+            "BR"
+        );
+        requirements.addAll(businessReqs);
+        
+        return requirements;
+    }
+    
+    private List<Requirement> analyzeFigma(Document document) {
+        List<Requirement> requirements = new ArrayList<>();
+        String content = document.getContent();
+        
+        // Extract UI requirements from Figma design description
+        List<Requirement> uiReqs = extractRequirementsByPattern(
+            content,
+            "UI[-\\s]*(\\d+)[:\\s]*(.+?)(?=\\n\\s*UI[-\\s]*|\\n\\s*UX|$)",
+            Requirement.Type.USER_INTERFACE,
+            "UI"
+        );
+        requirements.addAll(uiReqs);
+        
+        // Extract UX requirements
+        List<Requirement> uxReqs = extractRequirementsByPattern(
+            content,
+            "UX[-\\s]*(\\d+)[:\\s]*(.+?)(?=\\n\\s*UI[-\\s]*|\\n\\s*UX|$)",
+            Requirement.Type.USER_INTERFACE,
+            "UX"
+        );
+        requirements.addAll(uxReqs);
+        
+        return requirements;
+    }
+    
+    private List<Requirement> analyzeUserStory(Document document) {
+        List<Requirement> requirements = new ArrayList<>();
+        String content = document.getContent();
+        
+        // Extract single user story
+        Pattern userStoryPattern = Pattern.compile(
+            "As a\\s+(.+?)\\s+I want\\s+(.+?)\\s+so that\\s+(.+?)(?=\\n\\s*Acceptance Criteria:|$)",
+            Pattern.DOTALL
+        );
+        
+        Matcher matcher = userStoryPattern.matcher(content);
+        if (matcher.find()) {
+            String role = matcher.group(1).trim();
+            String need = matcher.group(2).trim();
+            String value = matcher.group(3).trim();
+            
+            Requirement requirement = Requirement.builder()
+                    .requirementId("US-001")
+                    .title("User Story: " + need)
+                    .description(String.format("As a %s, I want %s so that %s", role, need, value))
+                    .type(Requirement.Type.BUSINESS)
+                    .priority(Requirement.Priority.SHOULD_HAVE)
+                    .status(Requirement.Status.DRAFT)
+                    .document(document)
+                    .build();
+            
+            // Extract acceptance criteria
+            String acceptanceCriteria = extractAcceptanceCriteriaFromContent(content);
+            requirement.setAcceptanceCriteria(acceptanceCriteria);
+            
+            requirements.add(requirement);
+        }
+        
+        return requirements;
+    }
+    
+    private List<Requirement> extractRequirementsByPattern(String content, String pattern, 
+                                                          Requirement.Type type, String prefix) {
+        List<Requirement> requirements = new ArrayList<>();
+        Pattern compiledPattern = Pattern.compile(pattern, Pattern.DOTALL);
+        Matcher matcher = compiledPattern.matcher(content);
+        
+        int counter = 1;
+        while (matcher.find()) {
+            String id = prefix + "-" + String.format("%03d", counter++);
+            String title = matcher.groupCount() > 1 ? matcher.group(2).trim() : matcher.group(1).trim();
+            String description = matcher.groupCount() > 2 ? matcher.group(3).trim() : title;
+            
+            Requirement requirement = Requirement.builder()
+                    .requirementId(id)
+                    .title(title.length() > 100 ? title.substring(0, 97) + "..." : title)
+                    .description(description)
+                    .type(type)
+                    .priority(determinePriority(title))
+                    .status(Requirement.Status.DRAFT)
+                    .build();
+            
+            requirements.add(requirement);
+        }
+        
+        return requirements;
+    }
+    
+    private void extractAcceptanceCriteria(String content, List<Requirement> requirements) {
+        Pattern acPattern = Pattern.compile(
+            "Acceptance Criteria[:\\s]*\\n((?:\\d+\\.\\s*.+\\n?)+)",
+            Pattern.MULTILINE
+        );
+        
+        Matcher matcher = acPattern.matcher(content);
+        if (matcher.find()) {
+            String acceptanceCriteria = matcher.group(1).trim();
+            
+            // Assign acceptance criteria to the last requirement (assuming it belongs there)
+            if (!requirements.isEmpty()) {
+                requirements.get(requirements.size() - 1).setAcceptanceCriteria(acceptanceCriteria);
+            }
+        }
+    }
+    
+    private String extractAcceptanceCriteriaFromContent(String content) {
+        Pattern acPattern = Pattern.compile(
+            "Acceptance Criteria[:\\s]*\\n((?:\\d+\\.\\s*.+\\n?)+)",
+            Pattern.MULTILINE
+        );
+        
+        Matcher matcher = acPattern.matcher(content);
+        return matcher.find() ? matcher.group(1).trim() : "";
+    }
+    
+    private Requirement.Priority determinePriority(String title) {
+        String lowerTitle = title.toLowerCase();
+        if (lowerTitle.contains("critical") || lowerTitle.contains("must") || lowerTitle.contains("security")) {
+            return Requirement.Priority.MUST_HAVE;
+        } else if (lowerTitle.contains("important") || lowerTitle.contains("should")) {
+            return Requirement.Priority.SHOULD_HAVE;
+        } else {
+            return Requirement.Priority.COULD_HAVE;
+        }
+    }
+    
+    private String generateAnalysisSummary(List<Requirement> requirements) {
+        long functional = requirements.stream().filter(r -> r.getType() == Requirement.Type.FUNCTIONAL).count();
+        long nonFunctional = requirements.stream().filter(r -> r.getType() == Requirement.Type.NON_FUNCTIONAL).count();
+        long business = requirements.stream().filter(r -> r.getType() == Requirement.Type.BUSINESS).count();
+        long ui = requirements.stream().filter(r -> r.getType() == Requirement.Type.USER_INTERFACE).count();
+        
+        return String.format(
+            "Analysis complete. Found %d requirements: %d functional, %d non-functional, %d business, %d UI/UX.",
+            requirements.size(), functional, nonFunctional, business, ui
+        );
+    }
+}

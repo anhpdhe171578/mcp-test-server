@@ -1,0 +1,281 @@
+package com.mcp.testserver.service;
+
+import com.mcp.testserver.model.*;
+import com.mcp.testserver.dto.RobotFrameworkRequest;
+import com.mcp.testserver.dto.RobotFrameworkResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringJoiner;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class RobotFrameworkService {
+    
+    public RobotFrameworkResponse generateRobotFrameworkScript(RobotFrameworkRequest request) {
+        log.info("Generating Robot Framework script for test case: {}", request.getTestCaseId());
+        
+        TestCase testCase = request.getTestCase();
+        if (testCase == null) {
+            log.error("Test case not found for ID: {}", request.getTestCaseId());
+            return RobotFrameworkResponse.builder()
+                    .testCaseId(request.getTestCaseId())
+                    .scriptContent("")
+                    .generationSummary("Test case not found")
+                    .build();
+        }
+        
+        String scriptContent = generateScript(testCase, request.getOptions());
+        
+        return RobotFrameworkResponse.builder()
+                .testCaseId(testCase.getTestCaseId())
+                .scriptContent(scriptContent)
+                .scriptName(testCase.getTestCaseId() + ".robot")
+                .generationSummary("Robot Framework script generated successfully")
+                .build();
+    }
+    
+    private String generateScript(TestCase testCase, RobotFrameworkRequest.GenerationOptions options) {
+        StringBuilder script = new StringBuilder();
+        
+        // Add header
+        script.append("*** Settings ***\n");
+        script.append("Documentation     ").append(testCase.getDescription()).append("\n");
+        script.append("Suite Setup       Open Browser    ").append(getBaseUrl(options)).append("    ").append(getBrowser(options)).append("\n");
+        script.append("Suite Teardown    Close Browser\n");
+        script.append("Test Setup        Set Selenium Speed    ").append(getSeleniumSpeed(options)).append("\n");
+        script.append("Library           SeleniumLibrary\n");
+        script.append("Library           String\n");
+        script.append("Library           Collections\n");
+        
+        if (options != null && options.isIncludeDataDriver()) {
+            script.append("Library           DataDriver    file=test_data.csv    encoding=utf_8    dialect=unix\n");
+        }
+        
+        script.append("\n");
+        
+        // Add variables
+        script.append("*** Variables ***\n");
+        script.append("${BROWSER}         ").append(getBrowser(options)).append("\n");
+        script.append("${BASE_URL}        ").append(getBaseUrl(options)).append("\n");
+        script.append("${TIMEOUT}         ").append(getTimeout(options)).append("\n");
+        script.append("${USERNAME}        ").append(getUsername(options)).append("\n");
+        script.append("${PASSWORD}        ").append(getPassword(options)).append("\n");
+        script.append("\n");
+        
+        // Add test cases
+        script.append("*** Test Cases ***\n");
+        script.append(generateTestCase(testCase, options));
+        script.append("\n");
+        
+        // Add keywords
+        script.append("*** Keywords ***\n");
+        script.append(generateKeywords(testCase, options));
+        
+        return script.toString();
+    }
+    
+    private String generateTestCase(TestCase testCase, RobotFrameworkRequest.GenerationOptions options) {
+        StringBuilder testContent = new StringBuilder();
+        
+        String testName = sanitizeTestName(testCase.getTitle());
+        testContent.append(testName).append("\n");
+        testContent.append("    [Documentation]    ").append(testCase.getDescription()).append("\n");
+        testContent.append("    [Tags]    ").append(getTestTags(testCase)).append("\n");
+        
+        if (options != null && options.isIncludeDataDriver()) {
+            testContent.append("    [Template]    Test Data Driven\n");
+        } else {
+            // Add preconditions
+            if (testCase.getPreconditions() != null && !testCase.getPreconditions().isEmpty()) {
+                testContent.append("    [Setup]    Setup Test Preconditions\n");
+            }
+            
+            // Add test steps
+            testContent.append(convertTestStepsToRobotFramework(testCase.getTestSteps()));
+            
+            // Add verification
+            testContent.append("    [Teardown]    Verify Test Results\n");
+        }
+        
+        testContent.append("\n");
+        
+        return testContent.toString();
+    }
+    
+    private String convertTestStepsToRobotFramework(String testSteps) {
+        StringBuilder robotSteps = new StringBuilder();
+        
+        if (testSteps == null || testSteps.trim().isEmpty()) {
+            return robotSteps.toString();
+        }
+        
+        String[] steps = testSteps.split("\\n");
+        for (String step : steps) {
+            step = step.trim();
+            if (step.isEmpty()) continue;
+            
+            // Remove step numbers and convert to Robot Framework syntax
+            String cleanStep = step.replaceFirst("^\\d+\\.\\s*", "");
+            
+            // Convert common actions to Robot Framework keywords
+            if (cleanStep.toLowerCase().contains("click") || cleanStep.toLowerCase().contains("button")) {
+                robotSteps.append("    Click Element    ").append(extractElementSelector(cleanStep)).append("\n");
+            } else if (cleanStep.toLowerCase().contains("enter") || cleanStep.toLowerCase().contains("input") || cleanStep.toLowerCase().contains("type")) {
+                robotSteps.append("    Input Text    ").append(extractInputSelector(cleanStep)).append("\n");
+            } else if (cleanStep.toLowerCase().contains("navigate") || cleanStep.toLowerCase().contains("go to")) {
+                robotSteps.append("    Go To    ").append(extractUrl(cleanStep)).append("\n");
+            } else if (cleanStep.toLowerCase().contains("verify") || cleanStep.toLowerCase().contains("check") || cleanStep.toLowerCase().contains("confirm")) {
+                robotSteps.append("    Element Should Be Visible    ").append(extractElementSelector(cleanStep)).append("\n");
+            } else if (cleanStep.toLowerCase().contains("wait")) {
+                robotSteps.append("    Wait Until Element Is Visible    ").append(extractElementSelector(cleanStep)).append("\n");
+            } else {
+                // Generic step as comment
+                robotSteps.append("    # ").append(cleanStep).append("\n");
+            }
+        }
+        
+        return robotSteps.toString();
+    }
+    
+    private String generateKeywords(TestCase testCase, RobotFrameworkRequest.GenerationOptions options) {
+        StringBuilder keywords = new StringBuilder();
+        
+        // Setup keyword
+        keywords.append("Setup Test Preconditions\n");
+        keywords.append("    [Documentation]    Setup test preconditions\n");
+        keywords.append("    Set Selenium Timeout    ${TIMEOUT}\n");
+        if (testCase.getPreconditions() != null && testCase.getPreconditions().toLowerCase().contains("login")) {
+            keywords.append("    Login To Application    ${USERNAME}    ${PASSWORD}\n");
+        }
+        keywords.append("\n");
+        
+        // Login keyword
+        keywords.append("Login To Application\n");
+        keywords.append("    [Arguments]    ${username}    ${password}\n");
+        keywords.append("    [Documentation]    Login to the application\n");
+        keywords.append("    Go To    ${BASE_URL}/login\n");
+        keywords.append("    Input Text    id=username    ${username}\n");
+        keywords.append("    Input Text    id=password    ${password}\n");
+        keywords.append("    Click Button    id=login-button\n");
+        keywords.append("    Wait Until Element Is Visible    id=dashboard    timeout=10s\n");
+        keywords.append("\n");
+        
+        // Verification keyword
+        keywords.append("Verify Test Results\n");
+        keywords.append("    [Documentation]    Verify test results\n");
+        if (testCase.getExpectedResult() != null && !testCase.getExpectedResult().isEmpty()) {
+            keywords.append("    # Expected: ").append(testCase.getExpectedResult().replace("\n", " ")).append("\n");
+        }
+        keywords.append("    Capture Page Screenshot\n");
+        keywords.append("\n");
+        
+        // Data driven keyword if enabled
+        if (options != null && options.isIncludeDataDriver()) {
+            keywords.append("Test Data Driven\n");
+            keywords.append("    [Arguments]    ${test_data}\n");
+            keywords.append("    [Documentation]    Data driven test execution\n");
+            keywords.append("    Log    Testing with data: ${test_data}\n");
+            keywords.append("    # Implement data-driven test logic here\n");
+            keywords.append("\n");
+        }
+        
+        return keywords.toString();
+    }
+    
+    // Helper methods
+    private String sanitizeTestName(String title) {
+        return title.replaceAll("[^a-zA-Z0-9\\s]", "").replaceAll("\\s+", " ");
+    }
+    
+    private String getTestTags(TestCase testCase) {
+        List<String> tags = new ArrayList<>();
+        tags.add(testCase.getTestType().toString().toLowerCase());
+        tags.add(testCase.getPriority().toString().toLowerCase());
+        tags.add(testCase.getModule().toLowerCase().replace(" ", "-"));
+        return String.join("    ", tags);
+    }
+    
+    private String getBaseUrl(RobotFrameworkRequest.GenerationOptions options) {
+        if (options != null && options.getBaseUrl() != null) {
+            return options.getBaseUrl();
+        }
+        return "https://localhost:8080";
+    }
+    
+    private String getBrowser(RobotFrameworkRequest.GenerationOptions options) {
+        if (options != null && options.getBrowser() != null) {
+            return options.getBrowser();
+        }
+        return "chrome";
+    }
+    
+    private String getTimeout(RobotFrameworkRequest.GenerationOptions options) {
+        if (options != null && options.getTimeout() != null) {
+            return options.getTimeout();
+        }
+        return "10s";
+    }
+    
+    private String getSeleniumSpeed(RobotFrameworkRequest.GenerationOptions options) {
+        if (options != null && options.getSeleniumSpeed() != null) {
+            return options.getSeleniumSpeed();
+        }
+        return "0.5 seconds";
+    }
+    
+    private String getUsername(RobotFrameworkRequest.GenerationOptions options) {
+        if (options != null && options.getUsername() != null) {
+            return options.getUsername();
+        }
+        return "testuser";
+    }
+    
+    private String getPassword(RobotFrameworkRequest.GenerationOptions options) {
+        if (options != null && options.getPassword() != null) {
+            return options.getPassword();
+        }
+        return "testpass";
+    }
+    
+    private String extractElementSelector(String step) {
+        // Simple extraction - in real implementation, this would be more sophisticated
+        if (step.toLowerCase().contains("login")) return "id=login-button";
+        if (step.toLowerCase().contains("submit")) return "id=submit-button";
+        if (step.toLowerCase().contains("save")) return "id=save-button";
+        if (step.toLowerCase().contains("cancel")) return "id=cancel-button";
+        if (step.toLowerCase().contains("menu")) return "id=main-menu";
+        if (step.toLowerCase().contains("dashboard")) return "id=dashboard";
+        return "xpath=//button[contains(text(), '" + extractButtonText(step) + "')]";
+    }
+    
+    private String extractInputSelector(String step) {
+        if (step.toLowerCase().contains("username")) return "id=username";
+        if (step.toLowerCase().contains("password")) return "id=password";
+        if (step.toLowerCase().contains("email")) return "id=email";
+        if (step.toLowerCase().contains("name")) return "id=name";
+        if (step.toLowerCase().contains("phone")) return "id=phone";
+        return "xpath=//input[@type='text']";
+    }
+    
+    private String extractButtonText(String step) {
+        String[] words = step.split("\\s+");
+        for (int i = 0; i < words.length; i++) {
+            if (words[i].toLowerCase().contains("button") && i > 0) {
+                return words[i-1];
+            }
+        }
+        return "Submit";
+    }
+    
+    private String extractUrl(String step) {
+        if (step.toLowerCase().contains("login")) return "${BASE_URL}/login";
+        if (step.toLowerCase().contains("dashboard")) return "${BASE_URL}/dashboard";
+        if (step.toLowerCase().contains("home")) return "${BASE_URL}/";
+        return "${BASE_URL}";
+    }
+}
