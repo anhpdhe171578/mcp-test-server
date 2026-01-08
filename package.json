@@ -1,0 +1,26 @@
+{
+  "name": "mcp-test-server",
+  "version": "1.0.0",
+  "description": "MCP (Model Context Protocol) Server hỗ trợ Tester viết Manual Test & Auto Test với Spring Boot.",
+  "main": "mcp-server.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anhpdhe171578/mcp-test-server.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/anhpdhe171578/mcp-test-server/issues"
+  },
+  "homepage": "https://github.com/anhpdhe171578/mcp-test-server#readme",
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
+}
