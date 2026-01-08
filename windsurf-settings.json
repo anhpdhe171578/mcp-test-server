@@ -1,0 +1,291 @@
+{
+  "project": {
+    "name": "MCP Test Server",
+    "description": "Model Context Protocol Server for Testing Support",
+    "type": "spring-boot",
+    "version": "1.0.0"
+  },
+  "development": {
+    "java": {
+      "version": "17",
+      "home": "${env:JAVA_HOME}",
+      "maven": {
+        "executable": "mvn",
+        "downloadSources": true,
+        "updateSnapshots": false
+      }
+    },
+    "server": {
+      "port": 8080,
+      "contextPath": "/mcp-test-server",
+      "profiles": ["dev", "prod"]
+    },
+    "database": {
+      "type": "h2",
+      "console": "/h2-console",
+      "url": "jdbc:h2:mem:testdb"
+    }
+  },
+  "docker": {
+    "enabled": true,
+    "composeFile": "docker-compose.yml",
+    "prodComposeFile": "docker-compose.prod.yml",
+    "buildContext": ".",
+    "ports": {
+      "app": 8080,
+      "postgres": 5432,
+      "nginx": 80
+    }
+  },
+  "api": {
+    "baseURL": "http://localhost:8080/mcp-test-server/api/mcp",
+    "endpoints": {
+      "health": "/health",
+      "info": "/info",
+      "documentAnalysis": "/documents/analyze",
+      "testCaseGeneration": "/testcases/generate",
+      "robotFramework": "/automation/robot-framework"
+    }
+  },
+  "features": {
+    "documentAnalysis": {
+      "supportedTypes": ["SRS", "PRD", "FIGMA", "USER_STORY", "TECHNICAL_SPEC"],
+      "status": "temporarily_disabled",
+      "reason": "Lombok configuration issues"
+    },
+    "testCaseGeneration": {
+      "supportedTypes": ["FUNCTIONAL", "UI", "API", "INTEGRATION", "PERFORMANCE", "SECURITY"],
+      "status": "temporarily_disabled",
+      "reason": "Lombok configuration issues"
+    },
+    "robotFramework": {
+      "supportedBrowsers": ["chrome", "firefox", "edge"],
+      "status": "temporarily_disabled",
+      "reason": "Lombok configuration issues"
+    }
+  },
+  "integrations": {
+    "jira": {
+      "enabled": false,
+      "config": {
+        "url": "",
+        "username": "",
+        "token": ""
+      }
+    },
+    "confluence": {
+      "enabled": false,
+      "config": {
+        "url": "",
+        "username": "",
+        "token": ""
+      }
+    },
+    "bitbucket": {
+      "enabled": false,
+      "config": {
+        "url": "",
+        "username": "",
+        "token": ""
+      }
+    },
+    "jenkins": {
+      "enabled": false,
+      "config": {
+        "url": "",
+        "username": "",
+        "token": ""
+      }
+    }
+  },
+  "testing": {
+    "unitTests": {
+      "command": "mvn test",
+      "coverage": true
+    },
+    "integrationTests": {
+      "command": "mvn verify -Pintegration-test",
+      "enabled": false
+    },
+    "apiTests": {
+      "tool": "Postman",
+      "collection": "docs/Postman-Collection.json"
+    }
+  },
+  "deployment": {
+    "development": {
+      "command": "mvn spring-boot:run -Dspring-boot.run.profiles=dev",
+      "url": "http://localhost:8080/mcp-test-server"
+    },
+    "staging": {
+      "command": "docker-compose up -d",
+      "url": "http://localhost/mcp-test-server"
+    },
+    "production": {
+      "command": "docker-compose -f docker-compose.prod.yml up -d",
+      "url": "https://your-domain.com/mcp-test-server"
+    }
+  },
+  "monitoring": {
+    "actuator": {
+      "enabled": true,
+      "endpoints": ["/health", "/info", "/metrics", "/prometheus"]
+    },
+    "logging": {
+      "level": "INFO",
+      "file": "logs/mcp-test-server.log",
+      "rotation": true
+    }
+  },
+  "security": {
+    "cors": {
+      "enabled": true,
+      "origins": ["*"]
+    },
+    "ssl": {
+      "enabled": false,
+      "keystore": "classpath:keystore.p12",
+      "password": ""
+    }
+  },
+  "documentation": {
+    "api": {
+      "type": "REST",
+      "format": "OpenAPI 3.0",
+      "ui": "/swagger-ui.html"
+    },
+    "files": [
+      "README.md",
+      "README-VIETNAMESE.md",
+      "DEPLOYMENT.md",
+      "docs/API-Examples.md"
+    ]
+  },
+  "windsurf": {
+    "workspace": {
+      "name": "MCP Test Server",
+      "folders": [
+        {
+          "name": "Source Code",
+          "path": "src/main/java"
+        },
+        {
+          "name": "Resources",
+          "path": "src/main/resources"
+        },
+        {
+          "name": "Test Code",
+          "path": "src/test/java"
+        },
+        {
+          "name": "Documentation",
+          "path": "docs"
+        },
+        {
+          "name": "Docker",
+          "path": "."
+        }
+      ]
+    },
+    "tasks": [
+      {
+        "name": "Start Development Server",
+        "command": "mvn spring-boot:run -Dspring-boot.run.profiles=dev",
+        "group": "Development",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared",
+          "showReuseMessage": true,
+          "clear": false
+        }
+      },
+      {
+        "name": "Build Project",
+        "command": "mvn clean compile",
+        "group": "Build",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared"
+        }
+      },
+      {
+        "name": "Run Tests",
+        "command": "mvn test",
+        "group": "Test",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared"
+        }
+      },
+      {
+        "name": "Start Docker Staging",
+        "command": "docker-compose up -d",
+        "group": "Docker",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared"
+        }
+      },
+      {
+        "name": "Stop Docker Staging",
+        "command": "docker-compose down",
+        "group": "Docker",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared"
+        }
+      },
+      {
+        "name": "Build Docker Image",
+        "command": "docker build -t mcp-test-server:latest .",
+        "group": "Docker",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared"
+        }
+      }
+    ],
+    "launch": {
+      "version": "0.2.0",
+      "configurations": [
+        {
+          "name": "Debug MCP Test Server",
+          "type": "java",
+          "request": "launch",
+          "mainClass": "com.mcp.testserver.McpTestServerApplication",
+          "projectName": "test-server",
+          "args": "",
+          "envFile": "${workspaceFolder}/.env",
+          "vmArgs": "-Dspring.profiles.active=dev -Xmx1g -XX:+UseG1GC",
+          "console": "internalConsole",
+          "internalConsoleOptions": "openOnSessionStart"
+        }
+      ]
+    },
+    "extensions": {
+      "recommendations": [
+        "vscjava.vscode-java-pack",
+        "vscjava.vscode-spring-boot-dashboard",
+        "vscjava.vscode-spring-initializr-java",
+        "ms-vscode.vscode-docker",
+        "redhat.vscode-yaml",
+        "ms-vscode.vscode-json",
+        "ms-vscode.powershell",
+        "humao.rest-client",
+        "ms-vscode.vscode-postman"
+      ]
+    }
+  }
+}
